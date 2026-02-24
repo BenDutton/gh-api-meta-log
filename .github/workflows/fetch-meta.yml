@@ -1,0 +1,31 @@
+name: Fetch GitHub API Meta
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Every hour
+  workflow_dispatch: # Allow manual triggers
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch GitHub API /meta
+        run: curl -sSL https://api.github.com/meta | jq . > meta.json
+
+      - name: Commit changes if any
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add meta.json
+          if git diff --cached --quiet; then
+            echo "No changes detected."
+          else
+            git commit -m "Update meta.json — $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            git push
+          fi
