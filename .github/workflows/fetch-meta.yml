@@ -16,7 +16,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Fetch GitHub API /meta
-        run: curl -sSL https://api.github.com/meta | jq . > meta.json
+        run: |
+          HTTP_STATUS=$(curl -sSL -o /tmp/meta.json -w "%{http_code}" https://api.github.com/meta)
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "Unexpected HTTP status: $HTTP_STATUS. Skipping meta.json update and commit."
+            exit 0
+          fi
+          jq . /tmp/meta.json > meta.json
 
       - name: Commit changes if any
         run: |
